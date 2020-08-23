@@ -36,27 +36,21 @@ y_train = tf.convert_to_tensor(y_train, tf.float32)
 y_test = tf.convert_to_tensor(y_test, tf.float32)
 # print(X_train)
 
-class GraphConvolution(tf.keras.Model):
-    """Combines two GCN layers"""
 
-    def __init__(self, A, num_layers, in_unit, out_units, name="graph_convolution"):
+class GraphConvolution(tf.keras.Model):
+    """Combines GCN layers"""
+
+    def __init__(self, A, out_units, rate=0.0,
+                 l2=0.0, name="graph_convolution"):
         super(GraphConvolution, self).__init__(name=name)
 
         gcn = []
-        for i in range(num_layers):
-            if i == 0:
-                gcl = GraphConvolutionLayer(A, in_unit, out_units[i])
-            else:
-                gcl = GraphConvolutionLayer(A, out_units[i-1], out_units[i])
+        for i in range(len(out_units)):
+            gcl = GraphConvolutionLayer(A, out_units[i], rate, l2)
             gcn.append(gcl)
 
-        dropouts = []
-        for i in range(num_layers):
-            dropouts.append(tf.keras.layers.Dropout(0.2))
-
         self.gcn = gcn
-        self.dropouts = dropouts
-        self.num_layers = num_layers
+        self.num_layers = len(out_units)
         self.dense = tf.keras.layers.Dense(1, activation="sigmoid")
 
     def call(self, X):
@@ -65,8 +59,7 @@ class GraphConvolution(tf.keras.Model):
 
         for i in range(self.num_layers):
             output = self.gcn[i](output)
-            output = self.dropouts[i](output)
-        
+
         output = self.dense(output)
 
         return output
@@ -84,17 +77,21 @@ class GraphConvolution(tf.keras.Model):
 # model.compile(optimizer, tf.keras.losses.BinaryCrossentropy())
 
 # model.fit(X, y, epochs=100, batch_size=34)
+A = norm_adjacency_matrix(A)
 
-gcn = GraphConvolution(A, 3, feat_dim[1], [8, 4, 2])
+l2 = 5e-3
+rate = 0.5
+epochs = 1000
+
+gcn = GraphConvolution(A, [4, 2], rate, l2)
 
 bce_loss_fn = tf.keras.losses.BinaryCrossentropy()
 loss_metric = tf.keras.metrics.Mean()
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
 
-epochs = 1000
-
 # Iterate over epochs.
+
 for epoch in range(epochs):
     # print("Start of epoch %d" % (epoch,))
 
@@ -108,7 +105,7 @@ for epoch in range(epochs):
 
     loss_metric(loss)
 
-    if epoch % 10 == 0:
+    if epoch % 100 == 0:
         print("epoch %d: mean loss = %.4f" % (epoch, loss_metric.result()))
 
 res = gcn.predict(X, batch_size=34)
