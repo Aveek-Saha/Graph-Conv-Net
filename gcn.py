@@ -20,8 +20,6 @@ class GraphConvolutionLayer(tf.keras.layers.Layer):
             shape=(input_units, output_units), dtype="float32"), trainable=True)
 
     def call(self, X):
-
         res = self.A_hat @ X @ self.W
-
-        return tf.nn.relu(res)
+        return tf.nn.tanh(res)
 

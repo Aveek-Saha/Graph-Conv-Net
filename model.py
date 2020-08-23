@@ -1,41 +1,46 @@
 import tensorflow as tf
 import numpy as np
 import networkx as nx
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+
 
 from gcn import *
 
 
 G = nx.karate_club_graph()
 
-
 A = nx.convert_matrix.to_numpy_matrix(G)
 A = tf.convert_to_tensor(A, tf.float32)
-X = tf.eye(*tf.shape(A))
+# X = tf.eye(*tf.shape(A))
 
-# gcn_1 = GraphConvolutionLayer(A, tf.shape(X)[1], 4)
-# out_1 = gcn_1(X)
-# gcn_2 = GraphConvolutionLayer(A, tf.shape(out_1)[1], 2)
-# out_2 = gcn_2(out_1)
+X = np.zeros((A.shape[0], 2))
+node_distance_instructor = nx.shortest_path_length(G, target=33)
+node_distance_administrator = nx.shortest_path_length(G, target=0)
 
+for node in G.nodes():
+    X[node][0] = node_distance_administrator[node]
+    X[node][1] = node_distance_instructor[node]
 
-# attr = nx.get_node_attributes(G, 'club')
-# colors = ['blue' if x == 'Mr. Hi' else 'green' for x in attr.values()]
+attr = nx.get_node_attributes(G, 'club')
+y = np.array([0 if x == 'Mr. Hi' else 1 for x in attr.values()])
 
-# res = tf.transpose(out_2)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42)
 
-# plt.scatter(res[0], res[1], c=colors)
-# plt.show()
+feat_dim = X.shape
+
+X_train = tf.convert_to_tensor(X_train, tf.float32)
+X_test = tf.convert_to_tensor(X_test, tf.float32)
+y_train = tf.convert_to_tensor(y_train, tf.float32)
+y_test = tf.convert_to_tensor(y_test, tf.float32)
+# print(X_train)
 
 class GraphConvolution(tf.keras.Model):
     """Combines two GCN layers"""
 
-    def __init__(self, A, num_layers, in_unit, out_units, name="graph_convolution",
-                 **kwargs
-                 ):
+    def __init__(self, A, num_layers, in_unit, out_units, name="graph_convolution"):
         super(GraphConvolution, self).__init__(name=name)
-
-        self.num_layers = num_layers
 
         gcn = []
         for i in range(num_layers):
@@ -45,7 +50,13 @@ class GraphConvolution(tf.keras.Model):
                 gcl = GraphConvolutionLayer(A, out_units[i-1], out_units[i])
             gcn.append(gcl)
 
+        dropouts = []
+        for i in range(num_layers):
+            dropouts.append(tf.keras.layers.Dropout(0.2))
+
         self.gcn = gcn
+        self.dropouts = dropouts
+        self.num_layers = num_layers
         self.dense = tf.keras.layers.Dense(1, activation="sigmoid")
 
     def call(self, X):
@@ -54,12 +65,53 @@ class GraphConvolution(tf.keras.Model):
 
         for i in range(self.num_layers):
             output = self.gcn[i](output)
+            output = self.dropouts[i](output)
         
         output = self.dense(output)
 
         return output
 
 
-graph_conv = GraphConvolution(A, 2, tf.shape(X)[1], [4, 2])
-out = graph_conv(X)
-print(out)
+# inp = tf.keras.Input((feat_dim[1]))
+# out_1 = GraphConvolutionLayer(A, feat_dim[1], 2)(inp)
+# out_2 = GraphConvolutionLayer(A, 2, 1)(out_1)
+# out = tf.keras.layers.Dense(1, activation="sigmoid")(out_2)
+
+# model = tf.keras.Model(inputs=inp, outputs=out, name="graph_convolution")
+
+# optimizer = tf.keras.optimizers.SGD()
+
+# model.compile(optimizer, tf.keras.losses.BinaryCrossentropy())
+
+# model.fit(X, y, epochs=100, batch_size=34)
+
+gcn = GraphConvolution(A, 3, feat_dim[1], [8, 4, 2])
+
+bce_loss_fn = tf.keras.losses.BinaryCrossentropy()
+loss_metric = tf.keras.metrics.Mean()
+
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
+
+epochs = 1000
+
+# Iterate over epochs.
+for epoch in range(epochs):
+    # print("Start of epoch %d" % (epoch,))
+
+    with tf.GradientTape() as tape:
+        reconstructed = gcn(X)
+        # Compute reconstruction loss
+        loss = bce_loss_fn(y, reconstructed)
+
+    grads = tape.gradient(loss, gcn.trainable_weights)
+    optimizer.apply_gradients(zip(grads, gcn.trainable_weights))
+
+    loss_metric(loss)
+
+    if epoch % 10 == 0:
+        print("epoch %d: mean loss = %.4f" % (epoch, loss_metric.result()))
+
+res = gcn.predict(X, batch_size=34)
+y_pred = res.flatten()
+y_pred = np.where(y_pred >= 0.5, 1, 0)
+print(classification_report(y, y_pred))
