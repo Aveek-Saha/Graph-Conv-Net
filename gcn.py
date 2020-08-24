@@ -9,7 +9,7 @@ def norm_adjacency_matrix(A):
   A_hat = A + I
 
   D_inv = tf.linalg.tensor_diag(
-      tf.pow(tf.reduce_sum(A, 0), tf.cast(-0.5, tf.float32)))
+      tf.pow(tf.reduce_sum(A_hat, 0), tf.cast(-0.5, tf.float32)))
 
   A_hat = D_inv @ A_hat @ D_inv
 

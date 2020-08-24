@@ -88,7 +88,7 @@ labels_encoded, classes = encode_label(labels)
 
 inp = tf.keras.Input((features.shape[1],))
 out_1 = GraphConvolutionLayer(16, A, rate=rate, l2=l2)(inp)
-out = GraphConvolutionLayer( 7, A, tf.nn.sigmoid, rate, l2)(out_1)
+out = GraphConvolutionLayer( 7, A, tf.nn.sigmoid, rate)(out_1)
 
 model = tf.keras.Model(inputs= inp, outputs=out, name="graph_convolution")
 
