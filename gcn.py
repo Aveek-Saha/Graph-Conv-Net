@@ -17,25 +17,26 @@ def norm_adjacency_matrix(A):
 
 
 class GraphConvolutionLayer(tf.keras.layers.Layer):
-    def __init__(self, Adj, units, rate=0.0,
-                 l2=0.0, name='graph_convolution_layer'):
-        super(GraphConvolutionLayer, self).__init__(name=name)
+    def __init__(self, units, A, activation=tf.identity, rate=0.0, l2=0.0):
+        super(GraphConvolutionLayer, self).__init__()
 
-        self.A_hat = Adj
+        self.activation = activation
         self.units = units
         self.rate = rate
         self.l2 = l2
+        self.A = A
 
     def build(self, input_shape):
         self.W = self.add_weight(
-            shape=(input_shape[1], self.units),
-            dtype=self.dtype,
-            initializer='glorot_uniform',
-            regularizer=tf.keras.regularizers.l2(self.l2)
+          shape=(input_shape[1], self.units),
+          dtype=self.dtype,
+          initializer='glorot_uniform',
+          regularizer=tf.keras.regularizers.l2(self.l2)
         )
 
     def call(self, X):
-        X = tf.nn.dropout(X, self.rate)
-        X = self.A_hat @ X @ self.W
-        return tf.identity(X)
 
+        X = tf.nn.dropout(X, self.rate)
+        X = self.A @ X @ self.W
+        return self.activation(X)
+        
