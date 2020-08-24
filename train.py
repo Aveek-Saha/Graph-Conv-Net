@@ -85,12 +85,12 @@ epochs = 200
 learning_rate = 1e-2 
 labels_encoded, classes = encode_label(labels)
 
-inp = tf.keras.Input((features.shape[1],))
-out_1 = GraphConvolutionLayer(A, 16, rate, l2)(inp)
-out_2 = GraphConvolutionLayer(A, 7, rate, l2)(out_1)
-out = tf.keras.layers.Dense(7, activation="softmax")(out_2)
 
-model = tf.keras.Model(inputs=inp, outputs=out, name="graph_convolution")
+inp = tf.keras.Input((features.shape[1],))
+out_1 = GraphConvolutionLayer(16, A, rate=rate, l2=l2)(inp)
+out = GraphConvolutionLayer( 7, A, tf.nn.sigmoid, rate, l2)(out_1)
+
+model = tf.keras.Model(inputs= inp, outputs=out, name="graph_convolution")
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
@@ -109,3 +109,12 @@ model.fit(features,
           validation_data=validation_data,
           shuffle=False)
 
+
+features_test = features[test_mask]
+A_test = np.array(A)[test_mask,:][:,test_mask]
+y_test = labels_encoded[test_mask]
+
+y_pred = model.predict(features, batch_size=num_nodes)
+
+report = classification_report(np.argmax(y_test,axis=1), np.argmax(y_pred[test_mask],axis=1), target_names=classes)
+print('GCN Classification Report: \n {}'.format(report))
