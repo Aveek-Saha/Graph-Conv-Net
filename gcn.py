@@ -10,6 +10,7 @@ def norm_adjacency_matrix(A):
 
   D_inv = tf.linalg.tensor_diag(
       tf.pow(tf.reduce_sum(A_hat, 0), tf.cast(-0.5, tf.float32)))
+  D_inv = tf.where(tf.math.is_inf(D_inv), tf.zeros_like(D_inv), D_inv)
 
   A_hat = D_inv @ A_hat @ D_inv
 

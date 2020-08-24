@@ -39,28 +39,69 @@ for edge in edges:
 
 
 num_nodes = features.shape[0]
+num_labels = len(labels)
 
-test = int(0.35 * num_nodes)
-val = int(0.18 * num_nodes)
+
+def get_index(num_labels, num_train_class=20, num_test=1000, num_val=500):
+  
+  label_count = {}
+  train_index = []
+  for i, label in enumerate(labels):
+    if not label in label_count:
+      label_count[label] = 1
+      train_index.append(i)
+    else:
+      if label_count[label] >= num_train_class:
+        continue
+      else:
+        label_count[label] += 1
+        train_index.append(i)
+
+  test_index = []
+  count=0
+  for i in range(num_labels):
+    if count >= num_test:
+      break
+    if i not in train_index:
+      test_index.append(i)
+      count += 1
+
+  val_index = []
+  count=0
+  for i in range(num_labels):
+    if count >= num_val:
+      break
+    if i not in train_index and i not in test_index:
+      val_index.append(i)
+      count += 1
+
+  return train_index, test_index, val_index
+
+num_nodes = features.shape[0]
+
+test = 1000
+val = 500
+train = 20
+
+# train_index, test_index, val_index = get_index(num_labels, train, test, val)
 
 index = [i for i in range(num_nodes)]
-index = shuffle(index, random_state=1)
+index = shuffle(index,random_state=1)
 
-train_index = index[:(num_nodes-test-val)]
-val_index = index[(num_nodes-test-val):(num_nodes-test)]
+train_index = index[:(num_nodes-test-val)] 
+val_index = index[(num_nodes-test-val):(num_nodes-test)] 
 test_index = index[(num_nodes-test):]
 
-# len(train_index), len(val_index), len(test_index)
+len(train_index), len(val_index), len(test_index)
 
-train_mask = np.zeros((num_nodes,), dtype=bool)
+train_mask = np.zeros((num_nodes,),dtype=bool)
 train_mask[train_index] = True
 
-val_mask = np.zeros((num_nodes,), dtype=bool)
+val_mask = np.zeros((num_nodes,),dtype=bool)
 val_mask[val_index] = True
 
-test_mask = np.zeros((num_nodes,), dtype=bool)
+test_mask = np.zeros((num_nodes,),dtype=bool)
 test_mask[test_index] = True
-
 
 def encode_label(labels):
     label_encoder = LabelEncoder()
