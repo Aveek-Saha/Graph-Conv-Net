@@ -1,5 +1,7 @@
 # Graph Convolutional Networks
-A TensorFlow 2 implementation of Graph Convolutional Networks for semi supervised classification of nodes from the paper, Thomas N. Kipf, Max Welling, [Semi-Supervised Classification with Graph Convolutional Networks](http://arxiv.org/abs/1609.02907) (ICLR 2017)
+A TensorFlow 2 implementation of Graph Convolutional Networks for classification of nodes from the paper, Thomas N. Kipf, Max Welling, [Semi-Supervised Classification with Graph Convolutional Networks](http://arxiv.org/abs/1609.02907) (ICLR 2017)
+
+This is my attempt at trying to understand and recreate the neural network from from the paper. You can find the official implementation here: https://github.com/tkipf/gcn
 
 ## Requirements
 - tensorflow 2
@@ -7,6 +9,8 @@ A TensorFlow 2 implementation of Graph Convolutional Networks for semi supervise
 - numpy
 
 ## Run
+
+To train and test the network with the CORA dataset.
 
 ```bash
 python train.py
