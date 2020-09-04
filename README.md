@@ -18,7 +18,7 @@ python train.py
 
 ## Cite
 
-Please cite this paper if you use this code in your own work:
+Please cite the original paper if you use this code in your own work:
 
 ```
 @inproceedings{kipf2017semi,
