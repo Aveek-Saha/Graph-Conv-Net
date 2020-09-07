@@ -7,6 +7,7 @@ This is my attempt at trying to understand and recreate the neural network from 
 - tensorflow 2
 - networkx
 - numpy
+- scikit-learn
 
 ## Run
 

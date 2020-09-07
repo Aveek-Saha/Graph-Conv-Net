@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import networkx as nx
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 
 def norm_adjacency_matrix(A):
